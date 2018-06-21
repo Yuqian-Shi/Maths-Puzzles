@@ -9,7 +9,8 @@ A maths puzzle is a square grid of squares, each to be filled in with a single d
 
 Note that the row and column headings are not considered to be part of the row or column, and so may be filled with a number larger than a single digit. The upper left corner of the puzzle is not meaningful.
 When the puzzle is originally posed, most or all of the squares will be empty, with the headings filled in. The goal of the puzzle is to fill in all the squares according to the rules. A proper maths puzzle will have at most one solution.
-Here is an example puzzle as posed (up) and solved (down) :
+Here is an example puzzle as posed (up) and solved (down):
+
 PUZZLE|14|10|35
 --|--|--|--
 14|||
