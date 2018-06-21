@@ -4,66 +4,105 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
-%% General approach:
-%% Assuming that any given puzzle is a proper puzzle.
-%% 1. Extract rows and columns.
-%% 2. Perform the diagonal check.
-%% 3. Perform check on each row and column.
-%% If some of the rules are not satisified, then cut them(during the check function).
+%% Define the solution by defining a predicate puzzle_solution/1:
+%%	 puzzle_solution(Puzzle).
+%%  where Puzzle will be a proper list of proper lists,
+%% A numbers puzzle will be represented as a list of lists,
+%%  each of the same length, representing a single row of the puzzle.
+%% The first element of each list is considered to be the header for that row.
+%% Each element but the first of the first list in the puzzle is considered to be
+%%  the header of the corresponding column of the puzzle.
+%% The first element of the first element of the list is the corner square of the puzzle,
+%%  and thus is ignored.
+%% The way I do it is checking each row and column seperately to see whether all of them meet all the requirements.
+%% As long as some requirement is not met, cut the search to save time.
+%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%		Define the solution predicate and relative predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- ensure_loaded(library(clpfd)).
-
-
 puzzle_solution(Puzzle):-
-	Rows = Puzzle,
-	transpose(Rows, Cols),
-	% The firs row of Rows and Cols are the sums and productions.
-	% Therefore, remove them.
-	remove_head(Rows,Row1),
-	remove_head(Cols,Col1),
-	% Perform the diagonal check.
+	length(Puzzle,Len),
+	(Len =:=3 ->
+		puzzle_solution2(Puzzle)
+	;Len =:=4->
+		puzzle_solution3(Puzzle)
+	;Len =:=5->
+		puzzle_solution4(Puzzle)
+	).
+
+% Pattern match: for 2*2 puzzle.
+% First check whether the numbers on the diagonal line from upper left to lower right.
+%  If not equal, cut the search to save time.
+% Then use the predicate valid/1 to check each row and each column, ensure that they meet the requirements.
+%  If any row or any column failed to meet the requirements, then cut the search.
+
+puzzle_solution2([[_,C1,C2], [R1,R11,R12], [R2,R21,R22]]) :-
+	R11 = R22,
+	valid([R1,R11,R12]),
+	valid([R2,R21,R22]),
+	valid([C1,R11,R21]),
+	valid([C2,R12,R22]).
+
+% puzzle_solution([[_,Col1,Col2,Col3], [Row1,Row1Col1,Row1Col2,Row1Col3], [Row2,Row2Col1,Row2Col2,Row2Col3],
+%	 [Row3,Row3Col1,Row3Col2,Row3Col3]])
+% Pattern match: for 3*3 puzzle.
+% The same process as the one for 2*2 puzzle.
+
+puzzle_solution3([[_,C1,C2,C3], [R1,R11,R12,R13], [R2,R21,R22,R23], [R3,R31,R32,R33]]) :-
+	% R11 = R22, R22 = R33,
+	Puzzle = [[_,C1,C2,C3], [R1,R11,R12,R13], [R2,R21,R22,R23], [R3,R31,R32,R33]],
 	dia_check(Puzzle),
-	% Perform check on each row and column.
-	check(Col1,Row1).
+	valid([R1,R11,R12,R13]),
+	valid([R2,R21,R22,R23]),
+	valid([R3,R31,R32,R33]),
+	valid([C1,R11,R21,R31]),
+	valid([C2,R12,R22,R32]),
+	valid([C3,R13,R23,R33]).
 
-% check/1
-% Perform checks on the given lists of rows and columns.
-% For each element(row or column), call valid to perfoem the examination.
-check([],[]).
-check([Head_cols|Tail_cols],[Head_rows|Tail_rows]):-
-	valid(Head_cols),
-	valid(Head_rows),
-	check(Tail_cols,Tail_rows).
+% puzzle_solution([[_,Col1,Col2,Col3,Col4], [Row1,Row1Col1,Row1Col2,Row1Col3,Row1Col4], [Row2,Row2Col1,Row2Col2,Row2Col3,Row2Col4],
+%	 [Row3,Row3Col1,Row3Col2,Row3Col3,Row3Col4]], [Row4,Row4Col1,Row4Col2,Row4Col3,Row4Col4])
+% Pattern match: for 3*3 puzzle.
+% The same process as the one for 2*2 puzzle.
 
-
-% remove_head/1
-% Returns all the elements in a list but the first one.
-% In this case it is used to remove the first row and column of the puzzle.
-remove_head([_|Tail],Tail).
-
+puzzle_solution4(	[[_,C1,C2,C3,C4],
+					[R1,R11,R12,R13,R14],
+					[R2,R21,R22,R23,R24],
+					[R3,R31,R32,R33,R34],
+					[R4,R41,R42,R43,R44]]
+					) :-
+	R11 = R22, R22 = R33, R33 = R44,
+	valid([R1,R11,R12,R13,R14]),
+	valid([R2,R21,R22,R23,R24]),
+	valid([R3,R31,R32,R33,R34]),
+	valid([R4,R41,R42,R43,R44]),
+	valid([C1,R11,R21,R31,R41]),
+	valid([C2,R12,R22,R32,R42]),
+	valid([C3,R13,R23,R33,R43]),
+	valid([C4,R14,R24,R34,R44]).
 
 % valid/1
 % valid checks whether a row/column of the puzzle meet all the requirements.
-% 1) All the elements except the header is a single digit 1-9. If not, cut the search.
-% 2) No repeated digits.
-% 3) The head of the list is the sum or the product of the rest elements.
-valid([Head|Tail]) :-
-	inrange(Tail),
-	all_distinct(Tail),
-	head_check([Head|Tail]).
-
+% 1) all the elements except the header is a single digit 1-9. If not, cut the search.
+% 2) no repeated digits.
+% 3) the header of the list is the sum or the product of the rest elements.
+valid([X|Xs]) :-
+	inrange(Xs),
+	all_distinct(Xs),
+	head_check([X|Xs]).
 
 % inrange/1
 % Make sure the element is a single digit in 1-9.
 inrange([]).
-inrange([Digit|Tail]) :-
-	between(1,9,Digit),
-	inrange(Tail).
+inrange([X|Xs]) :-
+	between(1,9,X),
+	inrange(Xs).
 
 
-% d2_nth/4
-% Used to get an element form a 2D list.
+% d2_nth(Puzzle,Raw,Col,Element)
+% d2_nth/4 is used to get an element form a 2D list.
 % D2List is the 2D list, in this case, it is the puzzle.
 % Row and Col are the first and second indexes respectively.
 d2_nth(D2List,Raw,Col,Element):-
@@ -71,19 +110,16 @@ d2_nth(D2List,Raw,Col,Element):-
     nth0(Col, List1, Element).
 
 
-% dia_check/1
-% Used to perform the diagonal check form the puzzle.
-% The approach is get diagonal elements out and compare with the initial one.
+
+% dia_check(Puzzle)
+% dia_check/1 is used to perform the diagonal check form the puzzle.
 dia_check(Puzzle):-
 	length(Puzzle,Len),
 	Len1 is Len -1,
 	d2_nth(Puzzle,Len1,Len1,E),
 	dia_check(Puzzle,Len1,E).
-% diagonal check recursively.
 dia_check(Puzzle,Index,Last_value):-
 	(Index =:= 1 ->
-		% Stop at index 1,
-		% since elemet at the left-top of the puzzle is meaningless.
 		d2_nth(Puzzle,1,1,Last_value)
 	;Index>1->
     	d2_nth(Puzzle,Index,Index,Last_value),
@@ -92,9 +128,10 @@ dia_check(Puzzle,Index,Last_value):-
 ).
 
 
-% head_check/1
-% It checks whether the sum or
-% multiplicative equals to first elements of the given row.
+% head_check(Row)
+% head_check/1 checks whether the sum or
+% multiplicative equals to first elements of the given row
+
 head_check(Row):-
 	head_check(Row,0,_,1,_).
 head_check([Item1],Sum,Sum,Pdt,Pdt):-
