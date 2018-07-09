@@ -52,7 +52,7 @@ puzzle_solution2([[_,C1,C2], [R1,R11,R12], [R2,R21,R22]]) :-
 % The same process as the one for 2*2 puzzle.
 
 puzzle_solution3([[_,C1,C2,C3], [R1,R11,R12,R13], [R2,R21,R22,R23], [R3,R31,R32,R33]]) :-
-	% R11 = R22, R22 = R33,
+	R11 = R22, R22 = R33,
 	Puzzle = [[_,C1,C2,C3], [R1,R11,R12,R13], [R2,R21,R22,R23], [R3,R31,R32,R33]],
 	dia_check(Puzzle),
 	valid([R1,R11,R12,R13]),
@@ -112,7 +112,7 @@ d2_nth(D2List,Raw,Col,Element):-
 
 
 % dia_check(Puzzle)
-% dia_check/1 is used to perform the diagonal check form the puzzle.
+% dia_check/1 is used to perform the diagonal check for the puzzle.
 dia_check(Puzzle):-
 	length(Puzzle,Len),
 	Len1 is Len -1,
